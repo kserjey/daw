@@ -79,8 +79,6 @@ const kit = new Tone.Players(
   {}
 ).toMaster();
 
-Tone.Transport.bpm.value = 128;
-
 const kitPositions = ['kick', 'hihat', 'snare'];
 
 const initialStepState = [
@@ -109,19 +107,23 @@ function useSequence({ drumKit, steps }) {
   }, [stepState]);
 
   useEffect(() => {
-    const loop = new Tone.Sequence((time, column) => {
-      const stepStateColumn = stepStateRef.current.map(row => row[column]);
+    const loop = new Tone.Sequence(
+      (time, column) => {
+        const stepStateColumn = stepStateRef.current.map(row => row[column]);
 
-      stepStateColumn.forEach((value, index) => {
-        if (value) {
-          kit.get(kitPositions[index]).start(time, 0, '16n', 0, 1);
-        }
-      });
+        stepStateColumn.forEach((value, index) => {
+          if (value) {
+            kit.get(kitPositions[index]).start(time, 0, '16n', 0, 1);
+          }
+        });
 
-      Tone.Draw.schedule(() => {
-        setCurrentStep(column);
-      });
-    }, getArrayOf(steps));
+        Tone.Draw.schedule(() => {
+          setCurrentStep(column);
+        });
+      },
+      getArrayOf(steps),
+      '8n'
+    );
 
     loop.start(0);
 
