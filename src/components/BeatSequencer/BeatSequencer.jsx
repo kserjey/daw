@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Tone from 'tone';
-import produce from 'immer';
 import styled from 'styled-components/macro';
+import { useSequence } from './useSequence';
 
 const Container = styled.div`
   display: flex;
@@ -53,8 +53,6 @@ const Step = styled.td(
 `
 );
 
-const getArrayOf = length => Array.from({ length }).map((_, index) => index);
-
 function useStartStop() {
   const [on, set] = useState(false);
   const toggle = useCallback(() => set(val => !val), []);
@@ -70,89 +68,29 @@ function useStartStop() {
   return [on, toggle];
 }
 
-const kit = new Tone.Players(
-  {
-    kick: `${process.env.PUBLIC_URL}/sounds/808-Kicks01.wav`,
-    hihat: `${process.env.PUBLIC_URL}/sounds/808-HiHats03.wav`,
-    snare: `${process.env.PUBLIC_URL}/sounds/808-Snare02.wav`
-  },
-  {}
-).toMaster();
-
-const kitPositions = ['kick', 'hihat', 'snare'];
-
-const initialStepState = [
-  [1, 0, 1, 0, 1, 0, 1, 0],
-  [1, 1, 1, 1, 1, 1, 1, 1],
-  [0, 0, 1, 0, 0, 0, 1, 0]
-];
-
-function useSequence({ drumKit, steps }) {
-  const [stepState, setStepState] = useState(initialStepState);
-  const [currentStep, setCurrentStep] = useState(0);
-
-  const toggleStep = useCallback((drumIndex, stepIndex) => {
-    setStepState(
-      produce(draft => {
-        const prevValue = draft[drumIndex][stepIndex];
-        draft[drumIndex][stepIndex] = prevValue ? 0 : 1;
-      })
-    );
-  }, []);
-
-  const stepStateRef = useRef(stepState);
-
-  useEffect(() => {
-    stepStateRef.current = stepState;
-  }, [stepState]);
-
-  useEffect(() => {
-    const loop = new Tone.Sequence(
-      (time, column) => {
-        const stepStateColumn = stepStateRef.current.map(row => row[column]);
-
-        stepStateColumn.forEach((value, index) => {
-          if (value) {
-            kit.get(kitPositions[index]).start(time, 0, '16n', 0, 1);
-          }
-        });
-
-        Tone.Draw.schedule(() => {
-          setCurrentStep(column);
-        });
-      },
-      getArrayOf(steps),
-      '8n'
-    );
-
-    loop.start(0);
-
-    return () => loop.dispose();
-  }, [steps]);
-
-  return [currentStep, stepState, toggleStep];
-}
-
-function BeatSequencer({ drumKit = [], steps = 8 }) {
+function BeatSequencer({ drumKit = [], stepsLength = 8 }) {
   const [isPlaying, togglePlay] = useStartStop();
-  const [currentStep, stepState, toggleStep] = useSequence({ drumKit, steps });
+  const [currentStep, stepsState, toggleStep] = useSequence({
+    drumKit,
+    stepsLength
+  });
 
   return (
     <Container>
       <DrumKit>
-        {drumKit.map(item => (
-          <DrumSound key={item}>{item}</DrumSound>
+        {drumKit.map(({ name }) => (
+          <DrumSound key={name}>{name}</DrumSound>
         ))}
       </DrumKit>
       <PatternWrapper>
-        <Pattern drumKitLength={drumKit.length} steps={steps}>
+        <Pattern>
           <tbody>
-            {getArrayOf(drumKit.length).map(drumIndex => (
+            {stepsState.map((drumRow, drumIndex) => (
               <tr key={drumIndex}>
-                {getArrayOf(steps).map(stepIndex => (
+                {drumRow.map((value, stepIndex) => (
                   <Step
                     key={`${drumIndex}.${stepIndex}`}
-                    active={Boolean(stepState[drumIndex][stepIndex])}
+                    active={Boolean(value)}
                     onClick={() => toggleStep(drumIndex, stepIndex)}
                   />
                 ))}

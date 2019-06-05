@@ -12,6 +12,15 @@ function useBPM(initialValue = 128) {
   return [bpm, setBPM];
 }
 
+const DRUM_KIT = [
+  { name: 'Kick', source: `${process.env.PUBLIC_URL}/sounds/808-Kicks01.wav` },
+  {
+    name: 'HiHat',
+    source: `${process.env.PUBLIC_URL}/sounds/808-HiHats03.wav`
+  },
+  { name: 'Snare', source: `${process.env.PUBLIC_URL}/sounds/808-Snare02.wav` }
+];
+
 function App() {
   const [bpm, setBPM] = useBPM();
   return (
@@ -21,7 +30,7 @@ function App() {
         value={bpm}
         onChange={({ target }) => setBPM(parseInt(target.value))}
       />
-      <BeatSequencer drumKit={['Kick', 'HiHat', 'Snare']} />
+      <BeatSequencer drumKit={DRUM_KIT} stepsLength={16} />
     </React.Fragment>
   );
 }
