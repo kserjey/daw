@@ -50,7 +50,7 @@ function useSequence({ drumKit, stepsLength }) {
         stepStateColumn.forEach((value, drumIndex) => {
           if (value) {
             const drumName = drumPositionsRef.current[drumIndex];
-            drumKitRef.current.get(drumName).start(time, 0, '16n', 0, 1);
+            drumKitRef.current.get(drumName).start(time);
           }
         });
 
