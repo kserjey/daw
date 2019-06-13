@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Tone from 'tone';
 import { BeatSequencer } from './components/BeatSequencer';
+import { PianoRoll } from './components/PianoRoll';
 
 function useBPM(initialValue = 128) {
   const [bpm, setBPM] = useState(initialValue);
@@ -23,6 +24,7 @@ const DRUM_KIT = [
 
 function App() {
   const [bpm, setBPM] = useBPM();
+
   return (
     <React.Fragment>
       <input
@@ -30,7 +32,12 @@ function App() {
         value={bpm}
         onChange={({ target }) => setBPM(parseInt(target.value))}
       />
-      <BeatSequencer drumKit={DRUM_KIT} stepsLength={16} />
+      <BeatSequencer
+        style={{ marginBottom: 16 }}
+        drumKit={DRUM_KIT}
+        stepsLength={16}
+      />
+      <PianoRoll />
     </React.Fragment>
   );
 }
