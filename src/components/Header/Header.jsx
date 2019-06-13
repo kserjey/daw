@@ -41,7 +41,9 @@ function useBPM(initialValue = 128) {
 
 function Header({ style, className }) {
   const [bpm, setBPM] = useBPM();
-  const handleChange = useCallback(event => setBPM(event.target.value), []);
+  const handleChange = useCallback(event => setBPM(event.target.value), [
+    setBPM
+  ]);
 
   return (
     <Container {...{ style, className }}>
