@@ -68,7 +68,7 @@ function useStartStop() {
   return [on, toggle];
 }
 
-function BeatSequencer({ drumKit = [], stepsLength = 8 }) {
+function BeatSequencer({ className, style, drumKit = [], stepsLength = 8 }) {
   const [isPlaying, togglePlay] = useStartStop();
   const [currentStep, stepsState, toggleStep] = useSequence({
     drumKit,
@@ -76,7 +76,7 @@ function BeatSequencer({ drumKit = [], stepsLength = 8 }) {
   });
 
   return (
-    <Container>
+    <Container {...{ className, style }}>
       <DrumKit>
         {drumKit.map(({ name }) => (
           <DrumSound key={name}>{name}</DrumSound>
