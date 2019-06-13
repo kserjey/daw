@@ -24,6 +24,7 @@ const GlobalStyle = createGlobalStyle`
     height: 100%;
     margin: 0;
     font-family: 'Heebo', sans-serif;
+    background-color: #666666;
   }
 `;
 
@@ -33,7 +34,7 @@ function App() {
       <GlobalStyle />
       <Header style={{ marginBottom: 16 }} />
       <BeatSequencer
-        style={{ marginBottom: 16 }}
+        style={{ marginLeft: 32, marginBottom: 16 }}
         drumKit={DRUM_KIT}
         stepsLength={16}
       />

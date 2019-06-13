@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Tone from 'tone';
 import styled from 'styled-components/macro';
 import { useSequence } from './useSequence';
+import { ReactComponent as PlayIcon } from './play.svg';
+import { ReactComponent as PauseIcon } from './pause.svg';
 
 const Container = styled.div`
   display: flex;
@@ -12,12 +14,23 @@ const DrumKit = styled.ul`
   margin: 0;
   padding: 0;
   list-style: none;
+  background-color: #858585;
+  color: #ffffff;
+  border-width: 2px 0 2px 2px;
+  border-style: solid;
+  border-color: #666666;
+  border-radius: 4px 0 0 4px;
 `;
 
 const DrumSound = styled.li`
-  height: 24px;
-  line-height: 24px;
-  padding: 0 8px;
+  padding: 8px 16px;
+  border-width: 0 0 2px 0;
+  border-style: solid;
+  border-color: #666666;
+
+  &:last-child {
+    border-width: 0;
+  }
 `;
 
 const PatternWrapper = styled.div`
@@ -33,11 +46,12 @@ const Pattern = styled.table`
 const StepIndicator = styled.div(
   ({ currentStep }) => `
   position: absolute;
-  top: 0;
-  left: ${currentStep * 24}px;
-  width: 24px;
-  height: 100%;
-  border: 1px solid yellow;
+  top: 2px;
+  bottom: 2px;
+  left: ${currentStep * 42}px;
+  width: 40px;
+  border: 2px solid #FFFFFF;
+  border-radius: 2px;
   pointer-events: none;
 `
 );
@@ -45,13 +59,19 @@ const StepIndicator = styled.div(
 const Step = styled.td(
   ({ active }) => `
   box-sizing: border-box;
-  width: 24px;
-  height: 24px;
-  background-color: ${active ? 'yellow' : 'grey'};
-  border: 1px solid black;
+  width: 42px;
+  height: 42px;
+  background-color: ${active ? '#FED034' : '#858585'};
+  border: 2px solid #666666;
   cursor: pointer;
 `
 );
+
+const StartStopButton = styled.button`
+  width: 42px;
+  background-color: #ffffff;
+  cursor: pointer;
+`;
 
 function useStartStop() {
   const [on, set] = useState(false);
@@ -100,7 +120,9 @@ function BeatSequencer({ className, style, drumKit = [], stepsLength = 8 }) {
         </Pattern>
         <StepIndicator currentStep={currentStep} />
       </PatternWrapper>
-      <button onClick={togglePlay}>{isPlaying ? 'Stop' : 'Play'}</button>
+      <StartStopButton onClick={togglePlay}>
+        {isPlaying ? <PauseIcon /> : <PlayIcon />}
+      </StartStopButton>
     </Container>
   );
 }
