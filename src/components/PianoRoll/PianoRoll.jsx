@@ -116,10 +116,10 @@ function Grid({
       <g>
         {activeCells.map(({ rowIndex, columnIndex, length }) => (
           <ActiveNote
-            width={length * columnWidth}
-            height={rowHeight}
-            x={columnIndex * columnWidth}
-            y={rowIndex * rowHeight}
+            width={length * columnWidth - 2}
+            height={rowHeight - 2}
+            x={columnIndex * columnWidth + 1}
+            y={rowIndex * rowHeight + 1}
           />
         ))}
       </g>
@@ -188,7 +188,22 @@ function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
   return [notesState, toggleNote];
 }
 
-const NOTES = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'].reverse();
+const NOTES = [
+  'C4',
+  'D4',
+  'E4',
+  'F4',
+  'G4',
+  'A4',
+  'B4',
+  'C5',
+  'D5',
+  'E5',
+  'F5',
+  'G5',
+  'A5',
+  'B5'
+].reverse();
 
 const STEP_WIDTH = 72;
 const ROW_HEIGHT = 32;
