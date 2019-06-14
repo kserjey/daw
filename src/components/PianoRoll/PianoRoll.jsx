@@ -1,9 +1,15 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Tone from 'tone';
+import produce from 'immer';
 import styled from 'styled-components/macro';
 
 const Divider = styled.line`
   stroke: #666666;
   stroke-width: 2px;
+`;
+
+const ActiveNote = styled.rect`
+  fill: #fed034;
 `;
 
 const NoteText = styled.text`
@@ -49,7 +55,16 @@ function NotesLabels({ x, y, width, notes, noteHeight }) {
   );
 }
 
-function Grid({ x, y, rows, columns, rowHeight, columnWidth, onCellClick }) {
+function Grid({
+  x,
+  y,
+  rows,
+  columns,
+  rowHeight,
+  columnWidth,
+  activeCells,
+  onCellClick
+}) {
   const width = columns * columnWidth;
   const height = rows * rowHeight;
 
@@ -98,16 +113,89 @@ function Grid({ x, y, rows, columns, rowHeight, columnWidth, onCellClick }) {
           y2="100%"
         />
       ))}
+      <g>
+        {activeCells.map(({ rowIndex, columnIndex, length }) => (
+          <ActiveNote
+            width={length * columnWidth}
+            height={rowHeight}
+            x={columnIndex * columnWidth}
+            y={rowIndex * rowHeight}
+          />
+        ))}
+      </g>
     </svg>
   );
 }
 
-const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+const INITIAL_SYNTH = new Tone.Synth();
+
+INITIAL_SYNTH.toMaster();
+
+const INITIAL_STEP_STATE = {
+  0: [{ note: 'C4', duration: '2n' }],
+  3: [{ note: 'E4', duration: '2n' }],
+  6: [{ note: 'D4', duration: '2n' }]
+};
+
+function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
+  const [notesState, setNotesState] = useState(INITIAL_STEP_STATE);
+  const toggleNote = useCallback(
+    (note, step, duration) =>
+      setNotesState(
+        produce(draft => {
+          const stepNotes = draft[step];
+          const index = stepNotes.findIndex(stepNote => stepNote.note === note);
+          if (index) {
+            stepNotes.splice(index, 1);
+          } else {
+            stepNotes.push({ note, duration });
+          }
+        })
+      ),
+    []
+  );
+
+  const synthRef = useRef();
+
+  useEffect(() => {
+    synthRef.current = synth;
+  }, [synth]);
+
+  const notesStateRef = useRef();
+
+  useEffect(() => {
+    notesStateRef.current = notesState;
+  }, [notesState]);
+
+  useEffect(() => {
+    const loop = new Tone.Sequence(
+      (time, stepIndex) => {
+        const stepNotes = notesStateRef.current[stepIndex];
+        if (!stepNotes) return;
+
+        stepNotes.forEach(({ note, duration }, drumIndex) => {
+          synthRef.current.triggerAttackRelease(note, duration, time);
+        });
+      },
+      Array.from({ length: stepsLength }).map((_, index) => index),
+      '8n'
+    );
+
+    loop.start(0);
+    return () => loop.dispose();
+  }, [stepsLength]);
+
+  return [notesState, toggleNote];
+}
+
+const NOTES = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'].reverse();
 
 const STEP_WIDTH = 72;
 const ROW_HEIGHT = 32;
 
 function PianoRoll({ stepsLength = 16 }) {
+  const [notesState, toggleNote] = usePianoRoll({ stepsLength });
+
   return (
     <div>
       <NotesLabels width={64} notes={NOTES} noteHeight={ROW_HEIGHT} />
@@ -116,6 +204,17 @@ function PianoRoll({ stepsLength = 16 }) {
         rowHeight={ROW_HEIGHT}
         columns={stepsLength}
         columnWidth={STEP_WIDTH}
+        activeCells={Object.entries(notesState).reduce(
+          (acc, [stepIndex, stepNotes]) => [
+            ...acc,
+            ...stepNotes.map(({ note, duration }) => ({
+              rowIndex: NOTES.indexOf(note),
+              columnIndex: stepIndex,
+              length: duration[0]
+            }))
+          ],
+          []
+        )}
         onCellClick={console.log}
       />
     </div>
