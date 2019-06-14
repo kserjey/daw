@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import styled from 'styled-components/macro';
 
 const Divider = styled.line`
@@ -49,13 +49,37 @@ function NotesLabels({ x, y, width, notes, noteHeight }) {
   );
 }
 
-function Grid({ x, y, rows, columns, rowHeight, columnWidth }) {
+function Grid({ x, y, rows, columns, rowHeight, columnWidth, onCellClick }) {
   const width = columns * columnWidth;
   const height = rows * rowHeight;
 
+  const gridRef = useRef();
+
+  const handleClick = useCallback(
+    event => {
+      const point = gridRef.current.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+
+      const cursorPoint = point.matrixTransform(
+        gridRef.current.getScreenCTM().inverse()
+      );
+
+      onCellClick(
+        Math.floor(cursorPoint.x / columnWidth),
+        Math.floor(cursorPoint.y / rowHeight)
+      );
+    },
+    [rowHeight, columnWidth, onCellClick]
+  );
+
   return (
-    <svg style={{ borderRadius: '0 4px 4px 0' }} {...{ width, height, x, y }}>
-      <rect width="100%" height="100%" fill="#858585" />
+    <svg
+      ref={gridRef}
+      style={{ borderRadius: '0 4px 4px 0' }}
+      {...{ width, height, x, y }}
+    >
+      <rect width="100%" height="100%" fill="#858585" onClick={handleClick} />
       {Array.from({ length: rows + 1 }).map((_, rowIndex) => (
         <Divider
           key={rowIndex}
@@ -92,6 +116,7 @@ function PianoRoll({ stepsLength = 16 }) {
         rowHeight={ROW_HEIGHT}
         columns={stepsLength}
         columnWidth={STEP_WIDTH}
+        onCellClick={console.log}
       />
     </div>
   );
