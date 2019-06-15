@@ -215,8 +215,6 @@ const ROW_HEIGHT = 32;
 function PianoRoll({ stepsLength = 16 }) {
   const [notesState, toggleNote] = usePianoRoll({ stepsLength });
 
-  useEffect(() => {});
-
   return (
     <div>
       <NotesLabels width={64} notes={NOTES} noteHeight={ROW_HEIGHT} />
