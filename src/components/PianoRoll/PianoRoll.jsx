@@ -60,14 +60,11 @@ function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
       (time, stepIndex) => {
         const stepNotes = notesStateRef.current[stepIndex];
         if (!stepNotes) return;
-
-        stepNotes.forEach(({ note, duration }, drumIndex) => {
-          synthRef.current.triggerAttackRelease(
-            note,
-            { '16n': duration },
-            time
-          );
-        });
+        const chord = stepNotes.map(({ note }) => note);
+        const durations = stepNotes.map(({ duration }) => ({
+          '16n': duration
+        }));
+        synthRef.current.triggerAttackRelease(chord, durations, time);
       },
       Array.from({ length: stepsLength }).map((_, index) => index),
       '16n'
