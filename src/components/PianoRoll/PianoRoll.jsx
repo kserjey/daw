@@ -2,160 +2,20 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Tone from 'tone';
 import produce from 'immer';
 import styled from 'styled-components/macro';
-
-const Divider = styled.line`
-  stroke: #666666;
-  stroke-width: 2px;
-`;
+import { NotesLabels } from './NotesLabels';
+import { Grid } from './Grid';
 
 const ActiveNote = styled.rect`
   fill: #fed034;
 `;
 
-const NoteText = styled.text`
-  fill: #ffffff;
-  dominant-baseline: middle;
-  text-anchor: middle;
-`;
-
-function NotesLabels({ x, y, width, notes, noteHeight }) {
-  const height = notes.length * noteHeight;
-
-  return (
-    <svg
-      style={{ marginRight: 1, borderRadius: '4px 0 0 4px' }}
-      {...{ width, height, x, y }}
-    >
-      {notes.map((note, noteIndex) => (
-        <svg
-          key={noteIndex}
-          width="100%"
-          height={noteHeight}
-          x={0}
-          y={noteIndex * noteHeight}
-        >
-          <rect width="100%" height="100%" fill="#858585" />
-          <NoteText x="50%" y="50%">
-            {note}
-          </NoteText>
-        </svg>
-      ))}
-      <g>
-        {Array.from({ length: notes.length + 1 }).map((_, rowIndex) => (
-          <Divider
-            key={rowIndex}
-            x1={0}
-            y1={rowIndex * noteHeight}
-            x2="100%"
-            y2={rowIndex * noteHeight}
-          />
-        ))}
-      </g>
-    </svg>
-  );
-}
-
-function Grid({
-  x,
-  y,
-  rows,
-  columns,
-  rowHeight,
-  columnWidth,
-  tonePosition,
-  activeCells,
-  onCellClick,
-  onActiveCellClick
-}) {
-  const width = columns * columnWidth;
-  const height = rows * rowHeight;
-
-  const gridRef = useRef();
-
-  const handleCellClick = useCallback(
-    event => {
-      const point = gridRef.current.createSVGPoint();
-      point.x = event.clientX;
-      point.y = event.clientY;
-
-      const cursorPoint = point.matrixTransform(
-        gridRef.current.getScreenCTM().inverse()
-      );
-
-      onCellClick(
-        Math.floor(cursorPoint.y / rowHeight),
-        Math.floor(cursorPoint.x / columnWidth)
-      );
-    },
-    [rowHeight, columnWidth, onCellClick]
-  );
-
-  return (
-    <svg
-      ref={gridRef}
-      style={{ borderRadius: '0 4px 4px 0' }}
-      {...{ width, height, x, y }}
-    >
-      <rect
-        width="100%"
-        height="100%"
-        fill="#858585"
-        onClick={handleCellClick}
-      />
-      <rect
-        width="2px"
-        height="100%"
-        x={tonePosition * width}
-        y={0}
-        fill="#FFFFFF"
-      />
-      {Array.from({ length: rows + 1 }).map((_, rowIndex) => (
-        <Divider
-          key={rowIndex}
-          x1={0}
-          y1={rowIndex * rowHeight}
-          x2="100%"
-          y2={rowIndex * rowHeight}
-        />
-      ))}
-      {Array.from({ length: columns + 1 }).map((_, columnIndex) => (
-        <Divider
-          key={columnIndex}
-          x1={columnIndex * columnWidth}
-          y1={0}
-          x2={columnIndex * columnWidth}
-          y2="100%"
-        />
-      ))}
-      <g>
-        {activeCells.map(({ rowIndex, columnIndex, length }) => (
-          <ActiveNote
-            key={`${rowIndex}${columnIndex}`}
-            width={length * columnWidth - 2}
-            height={rowHeight - 2}
-            x={columnIndex * columnWidth + 1}
-            y={rowIndex * rowHeight + 1}
-            onClick={() => onActiveCellClick(rowIndex, columnIndex)}
-          />
-        ))}
-      </g>
-    </svg>
-  );
-}
-
 const INITIAL_SYNTH = new Tone.PolySynth();
 
 INITIAL_SYNTH.toMaster();
 
-const INITIAL_STEP_STATE = {
-  0: [{ note: 'C4', duration: 2 }],
-  3: [{ note: 'E4', duration: 2 }],
-  6: [{ note: 'D4', duration: 2 }]
-};
-
 function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
   const [loopPosition, setLoopPosition] = useState(0);
-  const [notesState, setNotesState] = useState(INITIAL_STEP_STATE);
+  const [notesState, setNotesState] = useState({});
   const toggleNote = useCallback(
     (note, step, duration = 1) =>
       setNotesState(
@@ -256,39 +116,54 @@ const STEP_WIDTH = 72;
 const ROW_HEIGHT = 32;
 
 function PianoRoll({ stepsLength = 16 }) {
+  const width = 64 + stepsLength * STEP_WIDTH;
+  const height = NOTES.length * ROW_HEIGHT;
   const [loopPosition, notesState, toggleNote] = usePianoRoll({ stepsLength });
 
-  const handleNoteToggle = useCallback(
-    (row, column) => {
-      toggleNote(NOTES[row], column, 1);
-    },
-    [toggleNote]
+  const notes = Object.entries(notesState).reduce(
+    (acc, [stepIndex, stepNotes]) => [
+      ...acc,
+      ...stepNotes.map(({ note, duration }) => ({
+        noteIndex: NOTES.indexOf(note),
+        stepIndex,
+        duration
+      }))
+    ],
+    []
   );
 
   return (
-    <div>
+    <svg width={width} height={height}>
       <NotesLabels width={64} notes={NOTES} noteHeight={ROW_HEIGHT} />
       <Grid
+        x={65}
         rows={NOTES.length}
         rowHeight={ROW_HEIGHT}
         columns={stepsLength}
         columnWidth={STEP_WIDTH}
-        tonePosition={loopPosition}
-        activeCells={Object.entries(notesState).reduce(
-          (acc, [stepIndex, stepNotes]) => [
-            ...acc,
-            ...stepNotes.map(({ note, duration }) => ({
-              rowIndex: NOTES.indexOf(note),
-              columnIndex: stepIndex,
-              length: duration
-            }))
-          ],
-          []
-        )}
-        onCellClick={handleNoteToggle}
-        onActiveCellClick={handleNoteToggle}
-      />
-    </div>
+        onCellClick={(row, column) => toggleNote(NOTES[row], column, 1)}
+      >
+        <rect
+          width="2px"
+          height="100%"
+          x={loopPosition * (stepsLength * STEP_WIDTH)}
+          y={0}
+          fill="#FFFFFF"
+        />
+        <g>
+          {notes.map(({ noteIndex, stepIndex, duration }) => (
+            <ActiveNote
+              key={`${noteIndex}${stepIndex}`}
+              width={duration * STEP_WIDTH - 2}
+              height={ROW_HEIGHT - 2}
+              x={stepIndex * STEP_WIDTH + 1}
+              y={noteIndex * ROW_HEIGHT + 1}
+              onClick={() => toggleNote(NOTES[noteIndex], stepIndex)}
+            />
+          ))}
+        </g>
+      </Grid>
+    </svg>
   );
 }
 
