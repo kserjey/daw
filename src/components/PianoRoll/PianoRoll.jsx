@@ -132,9 +132,9 @@ const INITIAL_SYNTH = new Tone.Synth();
 INITIAL_SYNTH.toMaster();
 
 const INITIAL_STEP_STATE = {
-  0: [{ note: 'C4', duration: '2n' }],
-  3: [{ note: 'E4', duration: '2n' }],
-  6: [{ note: 'D4', duration: '2n' }]
+  0: [{ note: 'C4', duration: 2 }],
+  3: [{ note: 'E4', duration: 2 }],
+  6: [{ note: 'D4', duration: 2 }]
 };
 
 function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
@@ -174,11 +174,15 @@ function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
         if (!stepNotes) return;
 
         stepNotes.forEach(({ note, duration }, drumIndex) => {
-          synthRef.current.triggerAttackRelease(note, duration, time);
+          synthRef.current.triggerAttackRelease(
+            note,
+            { '16n': duration },
+            time
+          );
         });
       },
       Array.from({ length: stepsLength }).map((_, index) => index),
-      '8n'
+      '16n'
     );
 
     loop.start(0);
@@ -211,6 +215,8 @@ const ROW_HEIGHT = 32;
 function PianoRoll({ stepsLength = 16 }) {
   const [notesState, toggleNote] = usePianoRoll({ stepsLength });
 
+  useEffect(() => {});
+
   return (
     <div>
       <NotesLabels width={64} notes={NOTES} noteHeight={ROW_HEIGHT} />
@@ -225,7 +231,7 @@ function PianoRoll({ stepsLength = 16 }) {
             ...stepNotes.map(({ note, duration }) => ({
               rowIndex: NOTES.indexOf(note),
               columnIndex: stepIndex,
-              length: duration[0]
+              length: duration
             }))
           ],
           []

@@ -57,7 +57,7 @@ function useSequence({ drumKit, stepsLength }) {
         Tone.Draw.schedule(() => setCurrentStep(column));
       },
       Array.from({ length: stepsLength }).map((_, index) => index),
-      '8n'
+      '16n'
     );
 
     loop.start(0);
