@@ -64,14 +64,15 @@ function Grid({
   columnWidth,
   tonePosition,
   activeCells,
-  onCellClick
+  onCellClick,
+  onActiveCellClick
 }) {
   const width = columns * columnWidth;
   const height = rows * rowHeight;
 
   const gridRef = useRef();
 
-  const handleClick = useCallback(
+  const handleCellClick = useCallback(
     event => {
       const point = gridRef.current.createSVGPoint();
       point.x = event.clientX;
@@ -82,8 +83,8 @@ function Grid({
       );
 
       onCellClick(
-        Math.floor(cursorPoint.x / columnWidth),
-        Math.floor(cursorPoint.y / rowHeight)
+        Math.floor(cursorPoint.y / rowHeight),
+        Math.floor(cursorPoint.x / columnWidth)
       );
     },
     [rowHeight, columnWidth, onCellClick]
@@ -95,7 +96,12 @@ function Grid({
       style={{ borderRadius: '0 4px 4px 0' }}
       {...{ width, height, x, y }}
     >
-      <rect width="100%" height="100%" fill="#858585" onClick={handleClick} />
+      <rect
+        width="100%"
+        height="100%"
+        fill="#858585"
+        onClick={handleCellClick}
+      />
       <rect
         width="2px"
         height="100%"
@@ -128,6 +134,7 @@ function Grid({
             height={rowHeight - 2}
             x={columnIndex * columnWidth + 1}
             y={rowIndex * rowHeight + 1}
+            onClick={() => onActiveCellClick(rowIndex, columnIndex)}
           />
         ))}
       </g>
@@ -149,16 +156,25 @@ function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
   const [loopPosition, setLoopPosition] = useState(0);
   const [notesState, setNotesState] = useState(INITIAL_STEP_STATE);
   const toggleNote = useCallback(
-    (note, step, duration) =>
+    (note, step, duration = 1) =>
       setNotesState(
         produce(draft => {
           const stepNotes = draft[step];
-          const index = stepNotes.findIndex(stepNote => stepNote.note === note);
-          if (index) {
-            stepNotes.splice(index, 1);
-          } else {
-            stepNotes.push({ note, duration });
+
+          if (typeof stepNotes === 'undefined') {
+            draft[step] = [{ note, duration }];
+            return draft;
           }
+
+          const index = stepNotes.findIndex(stepNote => stepNote.note === note);
+
+          if (index > -1) {
+            stepNotes.splice(index, 1);
+            return draft;
+          }
+
+          stepNotes.push({ note, duration });
+          return draft;
         })
       ),
     []
@@ -241,6 +257,13 @@ const ROW_HEIGHT = 32;
 function PianoRoll({ stepsLength = 16 }) {
   const [loopPosition, notesState, toggleNote] = usePianoRoll({ stepsLength });
 
+  const handleNoteToggle = useCallback(
+    (row, column) => {
+      toggleNote(NOTES[row], column, 1);
+    },
+    [toggleNote]
+  );
+
   return (
     <div>
       <NotesLabels width={64} notes={NOTES} noteHeight={ROW_HEIGHT} />
@@ -261,7 +284,8 @@ function PianoRoll({ stepsLength = 16 }) {
           ],
           []
         )}
-        onCellClick={console.log}
+        onCellClick={handleNoteToggle}
+        onActiveCellClick={handleNoteToggle}
       />
     </div>
   );
