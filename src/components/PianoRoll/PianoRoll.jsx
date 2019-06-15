@@ -62,6 +62,7 @@ function Grid({
   columns,
   rowHeight,
   columnWidth,
+  tonePosition,
   activeCells,
   onCellClick
 }) {
@@ -95,6 +96,13 @@ function Grid({
       {...{ width, height, x, y }}
     >
       <rect width="100%" height="100%" fill="#858585" onClick={handleClick} />
+      <rect
+        width="2px"
+        height="100%"
+        x={tonePosition * width}
+        y={0}
+        fill="#FFFFFF"
+      />
       {Array.from({ length: rows + 1 }).map((_, rowIndex) => (
         <Divider
           key={rowIndex}
@@ -138,6 +146,7 @@ const INITIAL_STEP_STATE = {
 };
 
 function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
+  const [loopPosition, setLoopPosition] = useState(0);
   const [notesState, setNotesState] = useState(INITIAL_STEP_STATE);
   const toggleNote = useCallback(
     (note, step, duration) =>
@@ -167,8 +176,10 @@ function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
     notesStateRef.current = notesState;
   }, [notesState]);
 
+  const loopRef = useRef();
+
   useEffect(() => {
-    const loop = new Tone.Sequence(
+    loopRef.current = new Tone.Sequence(
       (time, stepIndex) => {
         const stepNotes = notesStateRef.current[stepIndex];
         if (!stepNotes) return;
@@ -185,11 +196,26 @@ function usePianoRoll({ synth = INITIAL_SYNTH, stepsLength }) {
       '16n'
     );
 
-    loop.start(0);
-    return () => loop.dispose();
+    loopRef.current.start(0);
+    return () => loopRef.current.dispose();
   }, [stepsLength]);
 
-  return [notesState, toggleNote];
+  useEffect(() => {
+    let requestId;
+
+    const handleTonePosition = timestamp => {
+      if (Tone.Transport.state === 'started') {
+        setLoopPosition(loopRef.current.progress);
+      }
+
+      requestId = requestAnimationFrame(handleTonePosition);
+    };
+
+    requestId = requestAnimationFrame(handleTonePosition);
+    return () => cancelAnimationFrame(requestId);
+  }, []);
+
+  return [loopPosition, notesState, toggleNote];
 }
 
 const NOTES = [
@@ -213,7 +239,7 @@ const STEP_WIDTH = 72;
 const ROW_HEIGHT = 32;
 
 function PianoRoll({ stepsLength = 16 }) {
-  const [notesState, toggleNote] = usePianoRoll({ stepsLength });
+  const [loopPosition, notesState, toggleNote] = usePianoRoll({ stepsLength });
 
   return (
     <div>
@@ -223,6 +249,7 @@ function PianoRoll({ stepsLength = 16 }) {
         rowHeight={ROW_HEIGHT}
         columns={stepsLength}
         columnWidth={STEP_WIDTH}
+        tonePosition={loopPosition}
         activeCells={Object.entries(notesState).reduce(
           (acc, [stepIndex, stepNotes]) => [
             ...acc,
