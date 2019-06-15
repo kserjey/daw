@@ -130,6 +130,7 @@ function Grid({
       <g>
         {activeCells.map(({ rowIndex, columnIndex, length }) => (
           <ActiveNote
+            key={`${rowIndex}${columnIndex}`}
             width={length * columnWidth - 2}
             height={rowHeight - 2}
             x={columnIndex * columnWidth + 1}
@@ -142,7 +143,7 @@ function Grid({
   );
 }
 
-const INITIAL_SYNTH = new Tone.Synth();
+const INITIAL_SYNTH = new Tone.PolySynth();
 
 INITIAL_SYNTH.toMaster();
 
