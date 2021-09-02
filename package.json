@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "husky": "^2.3.0",
-    "immer": "^3.1.2",
+    "immer": "^9.0.6",
     "lint-staged": "^8.1.7",
     "lodash": "^4.17.11",
     "prettier": "^1.17.1",
